@@ -17,7 +17,7 @@ public class HtmlUnitScraper {
 
 	public static void main(String[] args) throws Exception {
 
-		String cookieSession = process(); //30min
+		String cookieSession = getCookieSession(); //30min
 		if(cookieSession == null){
 			System.err.println("Cannot get cookie");
 			return;
@@ -31,7 +31,7 @@ public class HtmlUnitScraper {
 
 	// find all images without alternate text
 	// and give them a red border
-	static String process(){
+	static String getCookieSession(){
 		try(WebClient webClient = new WebClient()) {
 			webClient.getOptions().setUseInsecureSSL(true);
 			webClient.getOptions().setCssEnabled(false);
