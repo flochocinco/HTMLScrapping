@@ -9,11 +9,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
 
 public class HtmlUnitScraper {
+
+	public static String cookie = null;
 
 	public static void main(String[] args) throws Exception {
 
@@ -32,6 +35,9 @@ public class HtmlUnitScraper {
 	// find all images without alternate text
 	// and give them a red border
 	static String getCookieSession(){
+		if(isCookieValid()){
+			return cookie;
+		}
 		try(WebClient webClient = new WebClient()) {
 			webClient.getOptions().setUseInsecureSSL(true);
 			webClient.getOptions().setCssEnabled(false);
@@ -41,16 +47,40 @@ public class HtmlUnitScraper {
 			HtmlPage htmlPage = webClient.getPage("https://www.vinted.fr/");
 			WebResponse response = htmlPage.getWebResponse();
 			//get "Cookie" from response
-			String cookie = response.getResponseHeaders().stream()
+			String cookie2 = response.getResponseHeaders().stream()
 					.filter(it -> "Set-Cookie".equals(it.getName()) && it.getValue().contains("_vinted_fr"))
 					.findAny()
 					.orElse(new NameValuePair("", null))
 					.getValue();
-			System.out.println(cookie);
+			System.out.println(cookie2);
+			cookie = cookie2;
 			return cookie;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 *
+	 * @param dateStr like "Thu, 20 Apr 2023 20:03:25 GMT
+	 * @return boolean
+	 */
+	public static boolean isExpired(String dateStr){
+		SimpleDateFormat format = new SimpleDateFormat("EEEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+		try {
+			Date date = format.parse(dateStr);
+			return Instant.now().isAfter(date.toInstant());
+		} catch (ParseException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static String getExpireDate(String cookie){
+		return cookie.split("expires=")[1].split(";")[0];
+	}
+
+	public static boolean isCookieValid(){
+		return cookie != null && !isExpired(getExpireDate(cookie));
 	}
 
 	public static String getVintedPhotos(String cookie) throws IOException {
