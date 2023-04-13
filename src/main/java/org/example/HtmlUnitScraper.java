@@ -26,10 +26,12 @@ public class HtmlUnitScraper {
 			return;
 		}
 
-		if(getVintedPhotos(cookieSession) == null){
+		List<String> vintedPhotos = getVintedPhotos(cookieSession);
+		if(vintedPhotos.isEmpty()){
 			return;
 		}
 
+		vintedPhotos.forEach(System.out::println);
 	}
 
 	// find all images without alternate text
@@ -83,7 +85,9 @@ public class HtmlUnitScraper {
 		return cookie != null && !isExpired(getExpireDate(cookie));
 	}
 
-	public static String getVintedPhotos(String cookie) throws IOException {
+	public static List<String> getVintedPhotos(String cookie) throws IOException {
+
+		List<String> urls = new ArrayList<>();
 
 		//String url = "https://www.vinted.fr/member/41318663-mytopdressing";
 		String url = "https://www.vinted.fr/api/v2/users/41318663/items?page=1&per_page=20&order=relevance";
@@ -94,27 +98,23 @@ public class HtmlUnitScraper {
 
 		int responseCode = connection.getResponseCode();
 		if(responseCode == 200){
-			StringBuilder response = new StringBuilder();
 			Scanner scanner = new Scanner(connection.getInputStream());
 			while(scanner.hasNextLine()){
 				String line = scanner.nextLine();
 				String[] fullSizeUrls = line.split("\"image_no\":1,");
 				if(fullSizeUrls.length > 1){
 					for(String split : new ArrayList<>(Arrays.asList(fullSizeUrls).subList(1, fullSizeUrls.length))){
-						response.append(split.split("url\":\"")[1].split("\"")[0]);
-						response.append("\n");
+						urls.add(split.split("url\":\"")[1].split("\"")[0]);
 					}
 				}
 			}
 			scanner.close();
 
-			System.out.println(response);
-			return response.toString();
 		}else{
 			System.err.println("Error code: " + responseCode);
 		}
 
 		// an error happened
-		return null;
+		return urls;
 	}
 }
